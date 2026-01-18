@@ -704,6 +704,7 @@ class SidebarChecklistApp:
             self._list_id_by_name[name] = l.get("id", "")
             names.append(name)
 
+        self._all_list_names = names
         self.list_combo["values"] = names
 
     def set_current_list(self, lobj):
@@ -758,17 +759,15 @@ class SidebarChecklistApp:
 
     def apply_filter(self):
         q = self.normalize_search_text(self.search_var.get())
-        for (text, var, row) in self.item_vars:
-            ok = True
-            if q:
-                ok = q in self.normalize_search_text(text)
-            row.pack_forget()
-            if ok:
-                row.pack(side="top", fill="x", padx=8, pady=6)
-        self.scroll.inner.update_idletasks()
-        self.scroll.canvas.configure(scrollregion=self.scroll.canvas.bbox("all"))
+        all_names = getattr(self, "_all_list_names", [])
         if q:
-            self.scroll.canvas.yview_moveto(0)
+            filtered = [
+                name for name in all_names
+                if q in self.normalize_search_text(name)
+            ]
+        else:
+            filtered = all_names
+        self.list_combo["values"] = filtered
 
     @staticmethod
     def normalize_search_text(value):
