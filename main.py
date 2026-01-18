@@ -946,7 +946,27 @@ class SidebarChecklistApp:
     def on_configure(self, event=None):
         # Prevent moving: if user drags, we snap back (debounced).
         # Also respond to environment changes
+        if not self.is_geometry_drifted():
+            return
         self.debounce_reposition()
+
+    def is_geometry_drifted(self) -> bool:
+        if not self.last_good_geometry:
+            return True
+        last_w, last_h, last_x, last_y = self.last_good_geometry
+        try:
+            cur_w = self.root.winfo_width()
+            cur_h = self.root.winfo_height()
+            cur_x = self.root.winfo_x()
+            cur_y = self.root.winfo_y()
+        except Exception:
+            return True
+        return (
+            abs(cur_w - last_w) > 2
+            or abs(cur_h - last_h) > 2
+            or abs(cur_x - last_x) > 2
+            or abs(cur_y - last_y) > 2
+        )
 
     def periodic_enforce(self):
         # Enforce topmost based on RDP
