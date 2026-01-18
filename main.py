@@ -18,6 +18,7 @@ import os
 import sys
 import time
 import traceback
+import unicodedata
 from datetime import datetime, timezone, timedelta
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
@@ -574,6 +575,7 @@ class SidebarChecklistApp:
         self.search_entry = ttk.Entry(row2, textvariable=self.search_var)
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(6, 0))
         self.search_var.trace_add("write", lambda *args: self.apply_filter())
+        self.search_entry.bind("<KeyRelease>", lambda event: self.apply_filter())
 
         # Row 3: buttons
         row3 = ttk.Frame(self.header)
@@ -755,14 +757,23 @@ class SidebarChecklistApp:
         self.apply_filter()
 
     def apply_filter(self):
-        q = (self.search_var.get() or "").strip().lower()
+        q = self.normalize_search_text(self.search_var.get())
         for (text, var, row) in self.item_vars:
             ok = True
             if q:
-                ok = q in (text or "").lower()
+                ok = q in self.normalize_search_text(text)
             row.pack_forget()
             if ok:
                 row.pack(side="top", fill="x", padx=8, pady=6)
+        self.scroll.inner.update_idletasks()
+        self.scroll.canvas.configure(scrollregion=self.scroll.canvas.bbox("all"))
+        if q:
+            self.scroll.canvas.yview_moveto(0)
+
+    @staticmethod
+    def normalize_search_text(value):
+        text = "" if value is None else str(value)
+        return unicodedata.normalize("NFKC", text).casefold().strip()
 
     def show_error(self, msg: str):
         # Hide list
