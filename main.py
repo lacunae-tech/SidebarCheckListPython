@@ -946,6 +946,8 @@ class SidebarChecklistApp:
     def on_configure(self, event=None):
         # Prevent moving: if user drags, we snap back (debounced).
         # Also respond to environment changes
+        if self.is_list_dropdown_open():
+            return
         self.debounce_reposition()
 
     def periodic_enforce(self):
@@ -956,6 +958,9 @@ class SidebarChecklistApp:
             pass
         # Also enforce geometry if drifted
         try:
+            if self.is_list_dropdown_open():
+                self.root.after(1000, self.periodic_enforce)
+                return
             if self.last_good_geometry:
                 w, h, x, y = self.last_good_geometry
                 # If moved significantly, snap back
@@ -966,6 +971,15 @@ class SidebarChecklistApp:
         except Exception:
             pass
         self.root.after(1000, self.periodic_enforce)
+
+    def is_list_dropdown_open(self) -> bool:
+        try:
+            popdown = self.root.tk.eval(f"ttk::combobox::PopdownWindow {self.list_combo}")
+            if not popdown:
+                return False
+            return bool(int(self.root.tk.eval(f"winfo ismapped {popdown}")))
+        except Exception:
+            return False
 
 
 def main():
